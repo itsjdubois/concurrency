@@ -1,20 +1,29 @@
+# runpod/handler.py  ── concurrent, non-blocking
+
 import runpod
-import time  
+import asyncio
+# ──────────────────────────────────────────────────────────────
+# Dummy request handler
+# ──────────────────────────────────────────────────────────────
+async def process_request_dummy(job: dict):
+    print(f"process_request start, job id: {job['id']}")
+    await asyncio.sleep(60)
+    return {"status": "done", "out": "finished"}
 
-def handler(event):
-    print(f"Worker Start")
-    input = event['input']
-    
-    prompt = input.get('prompt')  
-    seconds = input.get('seconds', 0)  
+# ──────────────────────────────────────────────────────────────
+# Optional dynamic modifier (keeps ≤ MAX_CONCURRENCY jobs)
+# ──────────────────────────────────────────────────────────────
+def concurrency_modifier(current: int) -> int:
+    """RunPod calls this periodically to adjust live concurrency."""
+    print("start concurrency_modifier")
+    return 3
 
-    print(f"Received prompt: {prompt}")
-    print(f"Sleeping for {seconds} seconds...")
-    
-    # Replace the sleep code with your Python function to generate images, text, or run any machine learning workload
-    time.sleep(seconds)  
-    
-    return prompt 
-
-if __name__ == '__main__':
-    runpod.serverless.start({'handler': handler })
+# ──────────────────────────────────────────────────────────────
+# Start the worker
+# ──────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    print("start concurrency_main")
+    runpod.serverless.start({
+        "handler":               process_request_dummy,
+        "concurrency_modifier":  concurrency_modifier
+    })
